@@ -77,3 +77,14 @@ export interface UserInfo {
   email: string
   avatar: string
 }
+
+/**
+ * 分页结果
+ */
+export interface PageResult<T> {
+  records: T[]
+  total: number
+  pageNum: number
+  pageSize: number
+  totalPages: number
+}

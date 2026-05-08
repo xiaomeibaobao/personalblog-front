@@ -3,7 +3,9 @@
     <div class="page-header">
       <h1 class="page-title">我的文章</h1>
       <el-button type="primary" @click="goToPublish">
-        <el-icon><Plus /></el-icon>
+        <el-icon>
+          <Plus />
+        </el-icon>
         写新文章
       </el-button>
     </div>
@@ -19,17 +21,13 @@
     <div v-if="loading" class="loading">
       <el-skeleton :rows="3" animated />
     </div>
-    
-    <div v-else-if="filteredArticles.length === 0" class="empty">
+
+    <div v-else-if="articles.length === 0" class="empty">
       <el-empty description="暂无文章，去写一篇吧" />
     </div>
-    
+
     <div v-else class="article-list">
-      <div
-        v-for="article in filteredArticles"
-        :key="article.id"
-        class="article-card"
-      >
+      <div v-for="article in articles" :key="article.id" class="article-card">
         <div class="article-cover" v-if="article.cover">
           <img :src="article.cover" alt="封面" />
         </div>
@@ -44,52 +42,65 @@
               </el-tag>
             </div>
           </div>
-          
+
           <div class="article-summary" v-if="article.summary">
             {{ article.summary }}
           </div>
-          
+
           <div class="article-meta">
             <span class="meta-item">
-              <el-icon><Folder /></el-icon>
+              <el-icon>
+                <Folder />
+              </el-icon>
               {{ article.categoryName || '未分类' }}
             </span>
             <span class="meta-item">
-              <el-icon><View /></el-icon>
+              <el-icon>
+                <View />
+              </el-icon>
               {{ article.viewCount || 0 }} 阅读
             </span>
             <span class="meta-item">
-              <el-icon><ChatLineSquare /></el-icon>
+              <el-icon>
+                <ChatLineSquare />
+              </el-icon>
               {{ article.commentCount || 0 }} 评论
             </span>
             <span class="meta-item">
-              <el-icon><Clock /></el-icon>
+              <el-icon>
+                <Clock />
+              </el-icon>
               {{ formatDate(article.createTime) }}
             </span>
           </div>
-          
+
           <div class="article-actions">
-            <el-button
-              v-if="article.status === 0"
-              type="primary"
-              link
-              size="small"
-              @click="handlePublish(article.id)"
-            >
-              <el-icon><Promotion /></el-icon>
+            <el-button v-if="article.status === 0" type="primary" link size="small" @click="handlePublish(article.id)">
+              <el-icon>
+                <Promotion />
+              </el-icon>
               发布
             </el-button>
             <el-button type="primary" link size="small" @click="goToEdit(article.id)">
-              <el-icon><Edit /></el-icon>
+              <el-icon>
+                <Edit />
+              </el-icon>
               编辑
             </el-button>
             <el-button type="danger" link size="small" @click="handleDelete(article.id)">
-              <el-icon><Delete /></el-icon>
+              <el-icon>
+                <Delete />
+              </el-icon>
               删除
             </el-button>
           </div>
         </div>
       </div>
+    </div>
+    <div class="pagination-container" v-if="total > 0">
+      <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :page-sizes="[5, 10, 20, 50]"
+        :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+        @current-change="handlePageChange" />
     </div>
   </div>
 </template>
@@ -106,15 +117,9 @@ const router = useRouter()
 const loading = ref(false)
 const articles = ref<Article[]>([])
 const activeTab = ref('all')
-
-// 过滤文章
-const filteredArticles = computed(() => {
-  if (activeTab.value === 'all') {
-    return articles.value
-  }
-  const status = activeTab.value === 'published' ? 1 : 0
-  return articles.value.filter(article => article.status === status)
-})
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 // 格式化日期
 const formatDate = (dateStr: string): string => {
@@ -122,7 +127,7 @@ const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
-  
+
   // 刚发布显示相对时间
   if (diff < 3600000) {
     return Math.floor(diff / 60000) + '分钟前'
@@ -130,7 +135,7 @@ const formatDate = (dateStr: string): string => {
   if (diff < 86400000) {
     return Math.floor(diff / 3600000) + '小时前'
   }
-  
+
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
@@ -138,9 +143,16 @@ const formatDate = (dateStr: string): string => {
 const loadMyArticles = async () => {
   loading.value = true
   try {
-    const res = await getMyArticles()
+    let status = ""
+    if (activeTab.value === 'published') {
+      status = "1"
+    } else if (activeTab.value === 'draft') {
+      status = "0"
+    }
+    const res = await getMyArticles(pageNum.value, pageSize.value, status)
     if (res.code === 200) {
-      articles.value = res.data || []
+      articles.value = res.data.records || []
+      total.value = res.data.total || 0
     }
   } catch (error) {
     console.error('加载文章失败', error)
@@ -151,7 +163,10 @@ const loadMyArticles = async () => {
 }
 
 // 切换标签
-const handleTabChange = () => {}
+const handleTabChange = () => {
+  pageNum.value = 1
+  loadMyArticles()
+}
 
 // 跳转详情
 const goToDetail = (id: number) => {
@@ -176,7 +191,7 @@ const handlePublish = async (id: number) => {
       cancelButtonText: '取消',
       type: 'info'
     })
-    
+
     const res = await changeArticleStatus(id, 1)
     if (res.code === 200) {
       ElMessage.success('发布成功')
@@ -197,7 +212,7 @@ const handleDelete = async (id: number) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     const res = await deleteArticle(id)
     if (res.code === 200) {
       ElMessage.success('删除成功')
@@ -208,6 +223,21 @@ const handleDelete = async (id: number) => {
       console.error('删除失败', error)
     }
   }
+}
+
+// 页码改变
+const handlePageChange = (page: number) => {
+  pageNum.value = page
+  loadMyArticles()
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// 每页条数改变
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  pageNum.value = 1
+  loadMyArticles()
 }
 
 onMounted(() => {
@@ -351,15 +381,19 @@ onMounted(() => {
   padding-left: 20px;
 }
 
+.pagination-container {
+  margin-top: 20px;
+}
+
 @media (max-width: 640px) {
   .article-cover {
     width: 120px;
   }
-  
+
   .article-title {
     font-size: 16px;
   }
-  
+
   .article-meta {
     gap: 12px;
   }

@@ -112,7 +112,6 @@ import { Plus } from '@element-plus/icons-vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { getCategoryList, getArticleDetail, updateArticle, deleteArticle } from '@/api'
 import type { Category, ArticlePublishRequest } from '@/types'
-import '@wangeditor/editor/dist/css/style.css'
 
 const router = useRouter()
 const route = useRoute()

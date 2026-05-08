@@ -109,7 +109,6 @@ import { Plus } from '@element-plus/icons-vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { getCategoryList, publishArticle } from '@/api'
 import type { Category } from '@/types'
-import '@wangeditor/editor/dist/css/style.css'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()

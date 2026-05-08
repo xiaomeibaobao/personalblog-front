@@ -15,6 +15,12 @@
         <p>{{ article.summary || article.content?.substring(0, 100) }}...</p>
       </div>
     </div>
+    <!-- 分页组件 -->
+    <div class="pagination-container" v-if="total > 0">
+      <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :page-sizes="[5, 10, 20, 50]"
+        :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+        @current-change="handlePageChange" />
+    </div>
   </div>
 </template>
 
@@ -28,6 +34,9 @@ import type { Article } from '@/types'
 const router = useRouter()
 const articles = ref<Article[]>([])
 const loading = ref(false)
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -39,18 +48,37 @@ const goToDetail = (id: number): void => {
   router.push(`/article/${id}`)
 }
 
-onMounted(async () => {
+// 页码改变
+const handlePageChange = (page: number) => {
+  pageNum.value = page
+  loadArticles()
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// 每页条数改变
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  pageNum.value = 1
+  loadArticles()
+}
+const loadArticles = async () => {
   loading.value = true
   try {
-    const res = await getArticleList()
+    const res = await getArticleList(pageNum.value, pageSize.value)
     if (res.code === 200) {
-      articles.value = res.data || []
+      articles.value = res.data.records || []
+      total.value = res.data.total || 0
     }
   } catch (error) {
     ElMessage.error('加载文章失败')
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  await loadArticles();
 })
 </script>
 
@@ -90,7 +118,8 @@ onMounted(async () => {
   line-height: 1.6;
 }
 
-.loading, .empty {
+.loading,
+.empty {
   text-align: center;
   padding: 50px;
   color: #999;

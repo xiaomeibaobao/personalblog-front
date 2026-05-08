@@ -8,7 +8,8 @@ import type {
   Category,
   Comment,
   CommentCreateRequest,
-  UserInfo
+  UserInfo,
+  PageResult
 } from '@/types'
 
 // ========== 用户相关 ==========
@@ -28,8 +29,8 @@ export const getCurrentUser = (): Promise<Result<UserInfo>> => {
 }
 
 // ========== 文章相关 ==========
-export const getArticleList = (): Promise<Result<Article[]>> => {
-  return request.get('/api/public/article/list')
+export const getArticleList = (pageNum: number, pageSize: number): Promise<Result<PageResult<Article>>> => {
+  return request.get('/api/public/article/list', { params: { pageNum, pageSize } })
 }
 
 export const getArticleDetail = (id: number): Promise<Result<Article>> => {
@@ -43,8 +44,8 @@ export const changeArticleStatus = (id: number, status: number): Promise<Result<
   return request.post(`/api/article/statusupdate`, { id, status })
 }
 
-export const getMyArticles = (): Promise<Result<Article[]>> => {
-  return request.get('/api/article/my')
+export const getMyArticles = (pageNum: number, pageSize: number, status: string): Promise<Result<PageResult<Article>>> => {
+  return request.get('/api/article/my', { params: { pageNum, pageSize, status } })
 }
 export const updateArticle = (data: ArticlePublishRequest): Promise<Result<number>> => {
   return request.post('/api/article/update', data)
