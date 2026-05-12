@@ -126,7 +126,7 @@ const editor = shallowRef()
 // 上传配置
 const uploadUrl = '/api/upload/image'
 const uploadHeaders = {
-  Authorization: `Bearer ${localStorage.getItem('token')}`
+  token: `${localStorage.getItem('token')}`
 }
 
 // 工具栏配置
@@ -368,7 +368,7 @@ onBeforeUnmount(() => {
   border: 1px dashed #d9d9d9;
   border-radius: 8px;
   width: 200px;
-  height: 100px;
+  height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -389,7 +389,7 @@ onBeforeUnmount(() => {
 .cover-preview {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .cover-tip {

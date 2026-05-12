@@ -29,8 +29,8 @@ export const getCurrentUser = (): Promise<Result<UserInfo>> => {
 }
 
 // ========== 文章相关 ==========
-export const getArticleList = (pageNum: number, pageSize: number): Promise<Result<PageResult<Article>>> => {
-  return request.get('/api/public/article/list', { params: { pageNum, pageSize } })
+export const getArticleList = (pageNum: number, pageSize: number, keyword: string): Promise<Result<PageResult<Article>>> => {
+  return request.post('/api/public/article/list', { pageNum, pageSize, keyword})
 }
 
 export const getArticleDetail = (id: number): Promise<Result<Article>> => {

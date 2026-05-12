@@ -1,8 +1,30 @@
 <template>
-  <div>
-    <h1>文章列表</h1>
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="articles.length === 0" class="empty">暂无文章</div>
+  <div class="articles-container">
+    <div class="search-header">
+      <div class="search-header-right">
+        <div class="search-input-wrapper">
+          <el-input v-model="keyword" placeholder="请输入搜索关键词" size="large" clearable @keyup.enter="handleSearch"
+            @clear="handleClear">
+            <template #append>
+              <el-button size="small" @click="handleSearch" :loading="loading">搜索</el-button>
+            </template>
+          </el-input>
+        </div>
+
+        <div class="search-result-info" v-if="total > 0">
+          共找到 <strong>{{ total }}</strong> 篇文章
+        </div>
+      </div>
+    </div>
+    <!-- 文章列表 -->
+    <div v-if="loading" class="loading">
+      <el-skeleton :rows="3" animated />
+    </div>
+
+    <div v-else-if="articles.length === 0" class="empty">
+      <el-empty description="没有找到相关文章">
+      </el-empty>
+    </div>
     <div v-else class="articles">
       <div v-for="article in articles" :key="article.id" class="article-card" @click="goToDetail(article.id)">
         <h2>{{ article.title }}</h2>
@@ -37,6 +59,7 @@ const loading = ref(false)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const keyword = ref('')
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -62,10 +85,13 @@ const handleSizeChange = (size: number) => {
   pageNum.value = 1
   loadArticles()
 }
-const loadArticles = async () => {
+const loadArticles = async (isReset: boolean = false) => {
   loading.value = true
+  if(isReset) {
+    pageNum.value = 1
+  }
   try {
-    const res = await getArticleList(pageNum.value, pageSize.value)
+    const res = await getArticleList(pageNum.value, pageSize.value, keyword.value)
     if (res.code === 200) {
       articles.value = res.data.records || []
       total.value = res.data.total || 0
@@ -77,12 +103,48 @@ const loadArticles = async () => {
   }
 }
 
+// 执行搜索
+const handleSearch = async () => {
+  await loadArticles(true)
+}
+
+// 清空搜索
+const handleClear = () => {
+  keyword.value = ''
+}
+
 onMounted(async () => {
-  await loadArticles();
+  await loadArticles(true);
 })
 </script>
 
 <style scoped>
+.search-header {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e4e7ed;
+}
+
+.search-header-left {
+  flex-shrink: 0;
+}
+
+.search-header-right {
+  flex: 1;
+}
+
+.search-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2d3d;
+  margin: 0 0 12px 0;
+}
+
 .articles {
   margin-top: 20px;
 }
@@ -123,5 +185,9 @@ onMounted(async () => {
   text-align: center;
   padding: 50px;
   color: #999;
+}
+
+.search-input-wrapper {
+  margin-bottom: 10px;
 }
 </style>

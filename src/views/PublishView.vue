@@ -305,7 +305,7 @@ onMounted(() => {
   border: 1px dashed #d9d9d9;
   border-radius: 8px;
   width: 200px;
-  height: 100px;
+  height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,7 +326,7 @@ onMounted(() => {
 .cover-preview {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .cover-tip {
