@@ -6,8 +6,11 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import '@wangeditor/editor/dist/css/style.css'
+import '@/styles/global.scss'
+import dayjs from '@/utils/dayjs'
 
 const app = createApp(App)
+app.config.globalProperties.$dayjs = dayjs
 app.use(createPinia())
 app.use(ElementPlus, {
   locale: zhCn,  // 使用中文

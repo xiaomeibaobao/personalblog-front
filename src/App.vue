@@ -14,7 +14,7 @@
             <router-link to="/register">注册</router-link>
           </template>
           <template v-else>
-            <span class="username">{{ userStore.displayName() }}</span>
+            <span class="username" @click.stop="goToUserProfile(userStore.userInfo?.id as number)">{{ userStore.displayName() }}</span>
             <a href="#" @click.prevent="handleLogout">退出</a>
           </template>
         </div>
@@ -36,6 +36,10 @@ const router = useRouter()
 const handleLogout = (): void => {
   userStore.logout()
   router.push('/login')
+}
+
+const goToUserProfile = (userId: number) => {
+  router.push(`/user/${userId}`)
 }
 </script>
 
@@ -85,6 +89,7 @@ body {
 .nav-menu .username {
   margin-left: 20px;
   color: #42b983;
+  cursor: pointer;
 }
 
 main {

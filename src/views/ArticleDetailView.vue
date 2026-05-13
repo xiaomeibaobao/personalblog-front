@@ -3,54 +3,65 @@
     <!-- 文章内容 -->
     <div v-if="article" class="article-card">
       <h1 class="title">{{ article.title }}</h1>
-      
+
       <div class="meta">
-        <div class="meta-item">
-          <el-icon><User /></el-icon>
+        <div class="meta-item author" @click.stop="goToUserProfile(article.userId)">
+          <el-icon>
+            <User />
+          </el-icon>
           <span>{{ article.authorName || article.userId }}</span>
         </div>
         <div class="meta-item">
-          <el-icon><Folder /></el-icon>
+          <el-icon>
+            <Folder />
+          </el-icon>
           <span>{{ article.categoryName || '未分类' }}</span>
         </div>
         <div class="meta-item">
-          <el-icon><View /></el-icon>
+          <el-icon>
+            <View />
+          </el-icon>
           <span>{{ article.viewCount }} 阅读</span>
         </div>
         <div class="meta-item">
-          <el-icon><Clock /></el-icon>
+          <el-icon>
+            <Clock />
+          </el-icon>
           <span>{{ formatDate(article.createTime) }}</span>
         </div>
       </div>
-      
+
       <div class="content" v-html="article.content"></div>
+      <!-- 点赞按钮 -->
+      <div class="like-section">
+        <el-button :type="liked ? 'danger' : 'default'" :icon="liked ? StarFilled : Star" @click="handleLike"
+          :loading="likeLoading">
+          {{ liked ? '已点赞' : '点赞' }} ({{ likeCount }})
+        </el-button>
+      </div>
     </div>
-    
+
     <!-- 加载中 -->
     <div v-else-if="loading" class="loading">加载中...</div>
-    
+
     <!-- 文章不存在 -->
     <div v-else class="error">
       <el-empty description="文章不存在或已被删除" />
     </div>
-    
+
     <!-- 评论区域 -->
     <div v-if="article" class="comments-section">
       <h3 class="comments-title">
-        <el-icon><ChatLineSquare /></el-icon>
+        <el-icon>
+          <ChatLineSquare />
+        </el-icon>
         评论 ({{ comments.length }})
       </h3>
-      
+
       <!-- 发表评论 -->
       <div class="comment-form" v-if="userStore.isLoggedIn()">
-        <el-input
-          v-model="commentContent"
-          type="textarea"
-          :rows="4"
-          placeholder="写下你的评论..."
-          maxlength="500"
-          show-word-limit
-        />
+        <el-input v-model="commentContent" type="textarea" :rows="4" placeholder="写下你的评论..." maxlength="500"
+          show-word-limit />
         <div class="form-actions">
           <el-button type="primary" @click="submitComment" :loading="commentLoading">
             发表评论
@@ -58,24 +69,21 @@
         </div>
       </div>
       <div v-else class="login-tip">
-        <el-alert
-          title="提示"
-          type="info"
-          :closable="false"
-          show-icon
-        >
+        <el-alert title="提示" type="info" :closable="false" show-icon>
           <template #default>
             <router-link to="/login">登录后发表评论</router-link>
           </template>
         </el-alert>
       </div>
-      
+
       <!-- 评论列表 -->
       <div class="comment-list" v-if="comments.length > 0">
         <div v-for="comment in comments" :key="comment.id" class="comment-item">
           <div class="comment-header">
             <div class="comment-author">
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User />
+              </el-icon>
               <span>{{ comment.authorName || comment.userId }}</span>
             </div>
             <div class="comment-time">{{ formatDate(comment.createTime) }}</div>
@@ -83,7 +91,9 @@
           <div class="comment-content">{{ comment.content }}</div>
           <div class="comment-actions" v-if="userStore.isLoggedIn() && userStore.userInfo.id === comment.userId">
             <el-button type="danger" link size="small" @click="handleDeleteComment(comment.id)">
-              <el-icon><Delete /></el-icon> 删除
+              <el-icon>
+                <Delete />
+              </el-icon> 删除
             </el-button>
           </div>
         </div>
@@ -99,8 +109,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Folder, View, Clock, ChatLineSquare, Delete } from '@element-plus/icons-vue'
-import { getArticleDetail, getComments, addComment, deleteComment as deleteCommentApi } from '@/api'
+import { User, Folder, View, Clock, ChatLineSquare, Delete, StarFilled, Star } from '@element-plus/icons-vue'
+import { getArticleDetail, getComments, addComment, deleteComment as deleteCommentApi, unlikeArticle, likeArticle, getLikeStatus } from '@/api'
 import { useUserStore } from '@/stores/user'
 import type { Article, Comment } from '@/types'
 
@@ -113,6 +123,9 @@ const article = ref<Article | null>(null)
 const comments = ref<Comment[]>([])
 const commentContent = ref('')
 const commentLoading = ref(false)
+const liked = ref(false)
+const likeCount = ref(0)
+const likeLoading = ref(false)
 
 // 格式化日期
 const formatDate = (dateStr: string): string => {
@@ -128,7 +141,7 @@ const loadArticle = async () => {
     router.push('/')
     return
   }
-  
+
   try {
     const res = await getArticleDetail(id)
     if (res.code === 200 && res.data) {
@@ -161,7 +174,7 @@ const submitComment = async () => {
     ElMessage.warning('请输入评论内容')
     return
   }
-  
+
   commentLoading.value = true
   try {
     const res = await addComment({
@@ -188,7 +201,7 @@ const handleDeleteComment = async (commentId: number) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     const res = await deleteCommentApi(commentId)
     if (res.code === 200) {
       ElMessage.success('删除成功')
@@ -205,16 +218,16 @@ const handleDeleteComment = async (commentId: number) => {
 // 删除文章
 const handleDeleteArticle = async () => {
   if (!article.value) return
-  
+
   try {
     await ElMessageBox.confirm('确定要删除这篇文章吗？删除后不可恢复！', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     const { deleteArticle } = await import('@/api')
-    const res = await deleteArticle(article.value.id)
+    const res = await deleteArticle(article.value?.id as number)
     if (res.code === 200) {
       ElMessage.success('删除成功')
       router.push('/my-articles')
@@ -226,9 +239,56 @@ const handleDeleteArticle = async () => {
   }
 }
 
+const loadLikeStatus = async () => {
+  const id = parseInt(route.params.id as string)
+  console.log(route.params.id)
+  try {
+    const res = await getLikeStatus(id)
+    if (res.code === 200) {
+      liked.value = res.data.liked
+      likeCount.value = res.data.count
+    }
+  } catch (error) {
+    console.error('获取点赞状态失败', error)
+  }
+}
+
+const handleLike = async () => {
+  if (!userStore.isLoggedIn()) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+
+  likeLoading.value = true
+  try {
+    const id = parseInt(route.params.id as string)
+    if (liked.value) {
+      await unlikeArticle(id)
+      likeCount.value--
+      liked.value = false
+      ElMessage.success('取消点赞')
+    } else {
+      await likeArticle(id)
+      likeCount.value++
+      liked.value = true
+      ElMessage.success('点赞成功')
+    }
+  } catch (error) {
+    ElMessage.error('操作失败')
+  } finally {
+    likeLoading.value = false
+  }
+}
+
+const goToUserProfile = (userId: number) => {
+  router.push(`/user/${userId}`)
+}
+
 onMounted(() => {
   loadArticle()
   loadComments()
+  loadLikeStatus()
 })
 </script>
 
@@ -268,6 +328,10 @@ onMounted(() => {
   gap: 6px;
   color: #909399;
   font-size: 14px;
+}
+
+.meta-item.author {
+  cursor: pointer;
 }
 
 .content {
@@ -360,7 +424,8 @@ onMounted(() => {
   text-align: right;
 }
 
-.loading, .error {
+.loading,
+.error {
   text-align: center;
   padding: 60px;
   background: white;

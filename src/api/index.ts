@@ -9,7 +9,8 @@ import type {
   Comment,
   CommentCreateRequest,
   UserInfo,
-  PageResult
+  PageResult,
+  UserProfile
 } from '@/types'
 
 // ========== 用户相关 ==========
@@ -80,4 +81,37 @@ export const addComment = (data: CommentCreateRequest): Promise<Result<string>> 
 }
 export const deleteComment = (id: number): Promise<Result<string>> => {
   return request.get(`/api/comment/delete?commentId=${id}`)
+}
+// 点赞
+export const likeArticle = (articleId: number): Promise<Result<string>> => {
+  return request.post(`/api/articlelike/like`, null, { params: { articleId } })
+}
+// 取消点赞
+export const unlikeArticle = (articleId: number): Promise<Result<string>> => {
+  return request.post(`/api/articlelike/unlike`, null, { params: { articleId } })
+}
+// 获取点赞状态
+export const getLikeStatus = (articleId: number): Promise<Result<{
+  liked: boolean,
+  count: number
+}>> => {
+  return request.get(`/api/articlelike/status`, { params: { articleId } })
+}
+/**
+ * 获取用户个人信息
+ * @param userId 
+ * @returns 
+ */
+export const getUserProfile = (userId: number): Promise<Result<UserProfile>> => {
+  return request.get(`/api/user/profile`, { params: { userId } })
+}
+/**
+ * 获取用户发布的文章列表
+ * @param userId 
+ * @param pageNum 
+ * @param pageSize 
+ * @returns 
+ */
+export const getUserArticles = (userId: number, pageNum: number, pageSize: number): Promise<Result<PageResult<Article>>> => {
+  return request.get(`/api/user/articles`, { params: { userId, pageNum, pageSize } })
 }

@@ -29,7 +29,7 @@
       <div v-for="article in articles" :key="article.id" class="article-card" @click="goToDetail(article.id)">
         <h2>{{ article.title }}</h2>
         <div class="info">
-          <span>作者：{{ article.authorName || article.userId }}</span>
+          <span @click.stop="goToUserProfile(article.userId)">作者：{{ article.authorName || article.userId }}</span>
           <span>分类：{{ article.categoryName || '未分类' }}</span>
           <span>阅读：{{ article.viewCount }}</span>
           <span>{{ formatDate(article.createTime) }}</span>
@@ -111,6 +111,10 @@ const handleSearch = async () => {
 // 清空搜索
 const handleClear = () => {
   keyword.value = ''
+}
+
+const goToUserProfile = (userId: number) => {
+  router.push(`/user/${userId}`)
 }
 
 onMounted(async () => {
