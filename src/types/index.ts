@@ -32,6 +32,7 @@ export interface Article {
   viewCount?: number
   likeCount?: number
   status: number
+  tags?: Tag[]
   createTime?: string
   updateTime?: string
 }
@@ -44,6 +45,7 @@ export interface ArticlePublishRequest {
   cover?: string
   categoryId?: number
   status?: number
+  tagIds?: number[]
 }
 
 // 分类相关
@@ -88,7 +90,9 @@ export interface PageResult<T> {
   pageSize: number
   totalPages: number
 }
-
+/**
+ * 用户个人信息
+ */
 export interface UserProfile {
   id: number
   username: string
@@ -99,4 +103,13 @@ export interface UserProfile {
   articleCount: number
   totalViewCount: number
   totalLikeCount: number
+}
+/**
+ * 标签信息
+ */
+export interface Tag {
+  id?: number,
+  name: string,
+  useCount?: number,
+  createTime?: string
 }

@@ -10,7 +10,8 @@ import type {
   CommentCreateRequest,
   UserInfo,
   PageResult,
-  UserProfile
+  UserProfile,
+  Tag
 } from '@/types'
 
 // ========== 用户相关 ==========
@@ -30,8 +31,8 @@ export const getCurrentUser = (): Promise<Result<UserInfo>> => {
 }
 
 // ========== 文章相关 ==========
-export const getArticleList = (pageNum: number, pageSize: number, keyword: string): Promise<Result<PageResult<Article>>> => {
-  return request.post('/api/public/article/list', { pageNum, pageSize, keyword})
+export const getArticleList = (pageNum: number, pageSize: number, keyword: string, tagId: number | null): Promise<Result<PageResult<Article>>> => {
+  return request.post('/api/public/article/list', { pageNum, pageSize, keyword, tagId })
 }
 
 export const getArticleDetail = (id: number): Promise<Result<Article>> => {
@@ -114,4 +115,42 @@ export const getUserProfile = (userId: number): Promise<Result<UserProfile>> => 
  */
 export const getUserArticles = (userId: number, pageNum: number, pageSize: number): Promise<Result<PageResult<Article>>> => {
   return request.get(`/api/user/articles`, { params: { userId, pageNum, pageSize } })
+}
+/**
+ * 获取所有标签
+ * @returns 
+ */
+export const getAllTags = (): Promise<Result<Tag[]>> => {
+  return request.get(`/api/tag/list`)
+}
+/**
+ * 获取热门标签
+ * @returns 
+ */
+export const getHotTags = (): Promise<Result<Tag[]>> => {
+  return request.get(`/api/tag/hot`)
+}
+/**
+ * 添加标签
+ * @param data 
+ * @returns 
+ */
+export const addTag = (data: Tag): Promise<Result<number>> => {
+  return request.post(`/api/tag/add`, data)
+}
+/**
+ * 更新标签
+ * @param data 
+ * @returns 
+ */
+export const updateTag = (data: Tag): Promise<Result<number>> => {
+  return request.post(`/api/tag/update`, data)
+}
+/**
+ * 删除标签
+ * @param id 
+ * @returns 
+ */
+export const deleteTag = (id: number): Promise<Result<string>> => {
+  return request.post(`/api/tag/delete`, null, { params: { id } })
 }

@@ -2,63 +2,48 @@
   <div class="edit-container">
     <div class="edit-card">
       <h1 class="title">编辑文章</h1>
-      
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="80px"
-        label-position="right"
-      >
+
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" label-position="right">
         <el-form-item label="标题" prop="title">
-          <el-input
-            v-model="form.title"
-            placeholder="请输入文章标题"
-            maxlength="100"
-            show-word-limit
-          />
+          <el-input v-model="form.title" placeholder="请输入文章标题" maxlength="100" show-word-limit />
         </el-form-item>
 
         <el-form-item label="分类" prop="categoryId">
-          <el-select
-            v-model="form.categoryId"
-            placeholder="请选择分类"
-            clearable
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in categories"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
+          <el-select v-model="form.categoryId" placeholder="请选择分类" clearable style="width: 100%">
+            <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
 
+        <el-form-item label="标签" prop="tagIds">
+          <div class="tag-selector">
+            <el-select v-model="form.tagIds" multiple filterable allow-create default-first-option
+              placeholder="请选择或输入新标签" style="width: 100%" @change="handleTagChange">
+              <el-option v-for="tag in tagList" :key="tag.id" :label="tag.name" :value="tag.id" />
+            </el-select>
+
+            <!-- 热门标签推荐 -->
+            <div class="hot-tags" v-if="hotTags.length > 0">
+              <span class="hot-tags-label">热门推荐：</span>
+              <el-tag v-for="tag in hotTags" :key="tag.id" size="small" class="hot-tag-item" @click="addHotTag(tag.id)">
+                {{ tag.name }}
+              </el-tag>
+            </div>
+          </div>
+        </el-form-item>
+
         <el-form-item label="摘要" prop="summary">
-          <el-input
-            v-model="form.summary"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入文章摘要（选填）"
-            maxlength="500"
-            show-word-limit
-          />
+          <el-input v-model="form.summary" type="textarea" :rows="3" placeholder="请输入文章摘要（选填）" maxlength="500"
+            show-word-limit />
         </el-form-item>
 
         <el-form-item label="封面图" prop="cover">
           <div class="cover-upload">
-            <el-upload
-              class="cover-uploader"
-              :action="uploadUrl"
-              :headers="uploadHeaders"
-              :show-file-list="false"
-              :on-success="handleUploadSuccess"
-              :on-error="handleUploadError"
-              :before-upload="beforeUpload"
-            >
+            <el-upload class="cover-uploader" :action="uploadUrl" :headers="uploadHeaders" :show-file-list="false"
+              :on-success="handleUploadSuccess" :on-error="handleUploadError" :before-upload="beforeUpload">
               <img v-if="form.cover" :src="form.cover" class="cover-preview" />
-              <el-icon v-else class="cover-uploader-icon"><Plus /></el-icon>
+              <el-icon v-else class="cover-uploader-icon">
+                <Plus />
+              </el-icon>
             </el-upload>
             <div class="cover-tip">建议尺寸：800x400，支持 jpg/png 格式</div>
           </div>
@@ -67,19 +52,10 @@
         <!-- WangEditor 富文本编辑器 -->
         <el-form-item label="内容" prop="content">
           <div style="border: 1px solid #e4e7ed; border-radius: 4px; overflow: hidden;">
-            <Toolbar
-              :editor="editor"
-              :defaultConfig="toolbarConfig"
-              mode="default"
-              style="border-bottom: 1px solid #e4e7ed;"
-            />
-            <Editor
-              v-model="form.content"
-              :defaultConfig="editorConfig"
-              mode="default"
-              style="height: 400px; overflow-y: hidden;"
-              @onCreated="handleEditorCreated"
-            />
+            <Toolbar :editor="editor" :defaultConfig="toolbarConfig" mode="default"
+              style="border-bottom: 1px solid #e4e7ed;" />
+            <Editor v-model="form.content" :defaultConfig="editorConfig" mode="default"
+              style="height: 400px; overflow-y: hidden;" @onCreated="handleEditorCreated" />
           </div>
         </el-form-item>
 
@@ -110,8 +86,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { getCategoryList, getArticleDetail, updateArticle, deleteArticle } from '@/api'
-import type { Category, ArticlePublishRequest } from '@/types'
+import { getCategoryList, getArticleDetail, updateArticle, deleteArticle, getAllTags, getHotTags } from '@/api'
+import type { Category, ArticlePublishRequest, Tag } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
@@ -166,7 +142,8 @@ const form = reactive<ArticlePublishRequest & { id?: number }>({
   summary: '',
   cover: '',
   content: '',
-  status: 1
+  status: 1,
+  tagIds: []
 })
 
 const rules: FormRules = {
@@ -199,7 +176,7 @@ const loadArticle = async () => {
     router.push('/my-articles')
     return
   }
-  
+
   try {
     const res = await getArticleDetail(id)
     if (res.code === 200 && res.data) {
@@ -210,6 +187,7 @@ const loadArticle = async () => {
       form.cover = res.data.cover
       form.content = res.data.content
       form.status = res.data.status
+      form.tagIds = res.data.tags?.map(tag => tag.id ?? 0) || []
     } else {
       ElMessage.error('文章不存在')
       router.push('/my-articles')
@@ -261,9 +239,9 @@ const handleUploadError = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return
   if (!form.id) return
-  
+
   await formRef.value.validate()
-  
+
   submitting.value = true
   try {
     const res = await updateArticle({
@@ -273,9 +251,10 @@ const handleSubmit = async () => {
       summary: form.summary || undefined,
       cover: form.cover || undefined,
       categoryId: form.categoryId,
-      status: form.status
+      status: form.status,
+      tagIds: form.tagIds
     })
-    
+
     if (res.code === 200) {
       ElMessage.success(form.status === 1 ? '更新成功' : '草稿已保存')
       router.push('/my-articles')
@@ -293,14 +272,14 @@ const handleSubmit = async () => {
 // 删除文章
 const handleDelete = async () => {
   if (!form.id) return
-  
+
   try {
     await ElMessageBox.confirm('确定要删除这篇文章吗？删除后不可恢复！', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     deleting.value = true
     const res = await deleteArticle(form.id)
     if (res.code === 200) {
@@ -323,9 +302,50 @@ const handleCancel = () => {
   router.back()
 }
 
+const tagList = ref<Tag[]>([])
+const hotTags = ref<Tag[]>([])
+
+// 加载标签列表
+const loadTags = async () => {
+  try {
+    const res = await getAllTags()
+    if (res.code === 200) {
+      tagList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载标签失败', error)
+  }
+}
+
+// 加载热门标签
+const loadHotTags = async () => {
+  try {
+    const res = await getHotTags()
+    if (res.code === 200) {
+      hotTags.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载热门标签失败', error)
+  }
+}
+
+// 添加热门标签
+const addHotTag = (tagId: number) => {
+  if (!form.tagIds?.includes(tagId)) {
+    form.tagIds?.push(tagId)
+  }
+}
+
+// 标签变化
+const handleTagChange = (val: number[]) => {
+  console.log('选中标签：', val)
+}
+
 onMounted(() => {
   loadCategories()
   loadArticle()
+  loadTags()
+  loadHotTags()
 })
 
 onBeforeUnmount(() => {
@@ -335,7 +355,7 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .edit-container {
   max-width: 1100px;
   margin: 0 auto;
@@ -395,5 +415,35 @@ onBeforeUnmount(() => {
 .cover-tip {
   font-size: 12px;
   color: #909399;
+}
+
+.tag-selector {
+  width: 100%;
+}
+
+.hot-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed $border-light;
+}
+
+.hot-tags-label {
+  font-size: 12px;
+  color: $text-placeholder;
+}
+
+.hot-tag-item {
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: translateY(-1px);
+    background-color: $primary-color;
+    color: white;
+  }
 }
 </style>

@@ -11,11 +11,21 @@
           </el-input>
         </div>
 
+        <div class="hot-tags-filter" v-if="hotTags.length > 0">
+          <span class="filter-label">热门标签：</span>
+          <el-tag v-for="tag in hotTags" :key="tag.id" :type="selectedTagId === tag.id ? 'primary' : 'info'"
+            effect="plain" class="filter-tag" @click="filterByTag(tag.id)">
+            {{ tag.name }} ({{ tag.useCount }})
+          </el-tag>
+          <el-button v-if="selectedTagId" link type="primary" @click="clearFilter">清除筛选</el-button>
+        </div>
+
         <div class="search-result-info" v-if="total > 0">
           共找到 <strong>{{ total }}</strong> 篇文章
         </div>
       </div>
     </div>
+
     <!-- 文章列表 -->
     <div v-if="loading" class="loading">
       <el-skeleton :rows="3" animated />
@@ -47,12 +57,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getArticleList } from '@/api'
-import type { Article } from '@/types'
+import { getArticleList, getHotTags } from '@/api'
+import type { Article, Tag } from '@/types'
 
+const route = useRoute()
 const router = useRouter()
 const articles = ref<Article[]>([])
 const loading = ref(false)
@@ -60,6 +71,8 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const keyword = ref('')
+const hotTags = ref<Tag[]>([])
+const selectedTagId = ref<number | null>(null)
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -87,11 +100,11 @@ const handleSizeChange = (size: number) => {
 }
 const loadArticles = async (isReset: boolean = false) => {
   loading.value = true
-  if(isReset) {
+  if (isReset) {
     pageNum.value = 1
   }
   try {
-    const res = await getArticleList(pageNum.value, pageSize.value, keyword.value)
+    const res = await getArticleList(pageNum.value, pageSize.value, keyword.value, selectedTagId.value)
     if (res.code === 200) {
       articles.value = res.data.records || []
       total.value = res.data.total || 0
@@ -103,6 +116,32 @@ const loadArticles = async (isReset: boolean = false) => {
   }
 }
 
+// 加载热门标签
+const loadHotTags = async () => {
+  try {
+    const res = await getHotTags()
+    if (res.code === 200) {
+      hotTags.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载热门标签失败', error)
+  }
+}
+// 按标签筛选
+const filterByTag = (tagId: number) => {
+  selectedTagId.value = tagId
+  pageNum.value = 1
+  router.push({
+    query: { ...route.query, tagId: tagId.toString() }
+  })
+}
+// 清除筛选
+const clearFilter = () => {
+  selectedTagId.value = null
+  pageNum.value = 1
+  const { tagId, ...restQuery } = route.query
+  router.push({ query: restQuery })
+}
 // 执行搜索
 const handleSearch = async () => {
   await loadArticles(true)
@@ -117,18 +156,28 @@ const goToUserProfile = (userId: number) => {
   router.push(`/user/${userId}`)
 }
 
+// 监听 URL 参数变化
+watch(() => route.query.tagId, (tagId) => {
+  if (tagId) {
+    selectedTagId.value = parseInt(tagId as string)
+  } else {
+    selectedTagId.value = null
+  }
+  loadArticles(true)
+}, { immediate: true })
+
 onMounted(async () => {
-  await loadArticles(true);
+  await loadHotTags();
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .search-header {
   display: flex;
   gap: 20px;
-  margin-bottom: 24px;
+  // margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #e4e7ed;
+  // border-bottom: 2px solid #e4e7ed;
 }
 
 .search-header-left {
@@ -193,5 +242,31 @@ onMounted(async () => {
 
 .search-input-wrapper {
   margin-bottom: 10px;
+}
+
+.hot-tags-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: $bg-white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-sm;
+}
+
+.filter-label {
+  font-size: 14px;
+  color: $text-secondary;
+}
+
+.filter-tag {
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 }
 </style>

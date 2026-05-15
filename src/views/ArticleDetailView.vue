@@ -17,6 +17,17 @@
           </el-icon>
           <span>{{ article.categoryName || '未分类' }}</span>
         </div>
+        <div class="meta-item" v-if="article.tags && article.tags.length > 0">
+          <el-icon>
+            <PriceTag />
+          </el-icon>
+          <div class="tag-list">
+            <el-tag v-for="tag in article.tags" :key="tag.id" size="small" effect="plain"
+              @click.stop="goToTagArticles(tag.id)">
+              {{ tag.name }}
+            </el-tag>
+          </div>
+        </div>
         <div class="meta-item">
           <el-icon>
             <View />
@@ -126,6 +137,11 @@ const commentLoading = ref(false)
 const liked = ref(false)
 const likeCount = ref(0)
 const likeLoading = ref(false)
+
+// 跳转到标签文章列表
+const goToTagArticles = (tagId: number) => {
+  router.push(`/articles?tagId=${tagId}`)
+}
 
 // 格式化日期
 const formatDate = (dateStr: string): string => {
@@ -292,7 +308,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .article-detail {
   max-width: 900px;
   margin: 0 auto;
@@ -430,5 +446,20 @@ onMounted(() => {
   padding: 60px;
   background: white;
   border-radius: 12px;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+  .el-tag {
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
 }
 </style>
