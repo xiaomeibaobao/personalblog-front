@@ -84,7 +84,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { getAllTags, getCategoryList, getHotTags, publishArticle } from '@/api'
+import { batchInsertTags, getAllTags, getCategoryList, getHotTags, publishArticle } from '@/api'
 import type { Category, Tag } from '@/types'
 
 const router = useRouter()
@@ -151,6 +151,9 @@ const rules: FormRules = {
   ],
   content: [
     { required: true, message: '请输入文章内容', trigger: 'blur' }
+  ],
+  categoryId: [
+    { required: true, message: '请选择分类', trigger: 'change' }
   ]
 }
 
@@ -207,7 +210,15 @@ const handleSubmit = async () => {
   if (!formRef.value) return
 
   await formRef.value.validate()
-
+  const selectedNewTagNames = form.tagIds?.filter(tagId => typeof tagId == "string")
+  const res = await batchInsertTags(selectedNewTagNames as string[])
+  const newTagIds = form.tagIds?.filter(tagId => typeof tagId == "number")
+  if (res.code === 200) {
+    newTagIds?.push(...res.data??[])    
+  } else {
+    ElMessage.error(res.message || '新增标签失败')
+    return
+  }
   submitting.value = true
   try {
     const res = await publishArticle({
@@ -217,7 +228,7 @@ const handleSubmit = async () => {
       cover: form.cover || undefined,
       categoryId: form.categoryId,
       status: form.status,
-      tagIds: form.tagIds
+      tagIds: newTagIds
     })
 
     if (res.code === 200) {

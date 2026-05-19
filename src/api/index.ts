@@ -154,3 +154,11 @@ export const updateTag = (data: Tag): Promise<Result<number>> => {
 export const deleteTag = (id: number): Promise<Result<string>> => {
   return request.post(`/api/tag/delete`, null, { params: { id } })
 }
+/**
+ * 批量新增
+ * @param data 
+ * @returns 
+ */
+export const batchInsertTags = (data: string[]): Promise<Result<string>> => {
+  return request.post(`/api/tag/batchinsert`, data);
+}
