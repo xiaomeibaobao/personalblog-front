@@ -93,8 +93,8 @@ export const unlikeArticle = (articleId: number): Promise<Result<string>> => {
 }
 // 获取点赞状态
 export const getLikeStatus = (articleId: number): Promise<Result<{
-  liked: boolean,
-  count: number
+  isLiked: boolean,
+  likeCount: number
 }>> => {
   return request.get(`/api/articlelike/status`, { params: { articleId } })
 }
@@ -161,4 +161,18 @@ export const deleteTag = (id: number): Promise<Result<string>> => {
  */
 export const batchInsertTags = (data: string[]): Promise<Result<string>> => {
   return request.post(`/api/tag/batchinsert`, data);
+}
+
+/**
+ * 获取热门文章（按阅读量）
+ */
+export const getHotArticlesByView = (limit: number = 10): Promise<Result<Article[]>> => {
+  return request.get('/api/hot/view', { params: { limit } })
+}
+
+/**
+ * 获取热门文章（按点赞数）
+ */
+export const getHotArticlesByLike = (limit: number = 10): Promise<Result<Article[]>> => {
+  return request.get('/api/hot/like', { params: { limit } })
 }

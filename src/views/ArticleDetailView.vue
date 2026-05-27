@@ -261,8 +261,8 @@ const loadLikeStatus = async () => {
   try {
     const res = await getLikeStatus(id)
     if (res.code === 200) {
-      liked.value = res.data.liked
-      likeCount.value = res.data.count
+      liked.value = res.data.isLiked
+      likeCount.value = res.data.likeCount
     }
   } catch (error) {
     console.error('获取点赞状态失败', error)
