@@ -88,9 +88,11 @@ import { Plus } from '@element-plus/icons-vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { getCategoryList, getArticleDetail, updateArticle, deleteArticle, getAllTags, getHotTags, batchInsertTags } from '@/api'
 import type { Category, ArticlePublishRequest, Tag } from '@/types'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const deleting = ref(false)
@@ -181,7 +183,7 @@ const loadArticle = async () => {
   }
 
   try {
-    const res = await getArticleDetail(id)
+    const res = await getArticleDetail(id, userStore.userInfo?.id || null)
     if (res.code === 200 && res.data) {
       form.id = res.data.id
       form.title = res.data.title

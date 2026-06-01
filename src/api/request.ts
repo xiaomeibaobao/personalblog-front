@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import type { Result } from '@/types'
-
+import { useUserStore } from '@/stores/user'
 // 创建 axios 实例
 const request: AxiosInstance = axios.create({
   baseURL: '',
@@ -29,8 +29,9 @@ request.interceptors.response.use(
     return response.data
   },
   (error) => {
+    const userStore = useUserStore()
     if (error.response?.status === 401) {
-      localStorage.removeItem('token')
+      userStore.logout()
       // window.location.href = '/login'
       ElMessage.error('登录已过期，请重新登录')
     } else if (error.response?.data?.message) {

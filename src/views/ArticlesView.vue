@@ -57,6 +57,30 @@
     </div>
     <!-- 右侧：侧边栏 -->
     <div class="articles-sidebar">
+      <!-- 小时榜（近一小时热门） -->
+      <div class="sidebar-card">
+        <h3 class="sidebar-title">
+          <el-icon><Timer /></el-icon>
+          小时榜 🔥
+        </h3>
+        <div class="hot-list">
+          <div
+            v-for="(article, index) in hourlyRankArticles"
+            :key="article.id"
+            class="hot-item"
+            @click="goToDetail(article.id)"
+          >
+            <span class="hot-rank" :class="getRankClass(index + 1)">{{ index + 1 }}</span>
+            <div class="hot-info">
+              <div class="hot-title">{{ article.title }}</div>
+              <div class="hot-meta">{{ article.viewCount }} 阅读</div>
+            </div>
+          </div>
+          <div v-if="hourlyRankArticles.length === 0" class="empty-tip">
+            暂无小时榜数据
+          </div>
+        </div>
+      </div>
       <!-- 热门文章（按阅读量） -->
       <div class="sidebar-card">
         <h3 class="sidebar-title">
@@ -114,7 +138,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getArticleList, getHotTags, getHotArticlesByView, getHotArticlesByLike } from '@/api'
+import { getArticleList, getHotTags, getHotArticlesByView, getHotArticlesByLike, getHourlyRank } from '@/api'
 import type { Article, Tag } from '@/types'
 import { TrendCharts, Star } from '@element-plus/icons-vue'
 
@@ -137,7 +161,7 @@ const formatDate = (dateStr: string): string => {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
-const goToDetail = (id: number): void => {
+const goToDetail = (id: number | undefined): void => {
   router.push(`/article/${id}`)
 }
 
@@ -239,6 +263,20 @@ const loadHotArticles = async () => {
   }
 }
 
+// 新增小时榜数据
+const hourlyRankArticles = ref<Article[]>([])
+// 加载小时榜
+const loadHourlyRank = async () => {
+  try {
+    const res = await getHourlyRank(5)
+    if (res.code === 200) {
+      hourlyRankArticles.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载小时榜失败', error)
+  }
+}
+
 // 监听 URL 参数变化
 watch(() => route.query.tagId, (tagId) => {
   if (tagId) {
@@ -252,6 +290,7 @@ watch(() => route.query.tagId, (tagId) => {
 onMounted(async () => {
   await loadHotTags();
   await loadHotArticles()
+  await loadHourlyRank()
 })
 </script>
 

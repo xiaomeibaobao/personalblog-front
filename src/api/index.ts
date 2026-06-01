@@ -35,8 +35,8 @@ export const getArticleList = (pageNum: number, pageSize: number, keyword: strin
   return request.post('/api/public/article/list', { pageNum, pageSize, keyword, tagId })
 }
 
-export const getArticleDetail = (id: number): Promise<Result<Article>> => {
-  return request.get(`/api/public/article/${id}`)
+export const getArticleDetail = (id: number, userId: number | null): Promise<Result<Article>> => {
+  return request.get(`/api/public/article/${id}`, { params: { userId } })
 }
 
 export const publishArticle = (data: ArticlePublishRequest): Promise<Result<number>> => {
@@ -175,4 +175,12 @@ export const getHotArticlesByView = (limit: number = 10): Promise<Result<Article
  */
 export const getHotArticlesByLike = (limit: number = 10): Promise<Result<Article[]>> => {
   return request.get('/api/hot/like', { params: { limit } })
+}
+
+/**
+ * 获取小时榜（近一小时热门文章）
+ * @param {number} limit 获取文章的数量，默认10
+ */
+export const getHourlyRank = (limit = 10): Promise<Result<Article[]>> => {
+  return request.get('/api/hot/hour/rank', { params: { limit } })
 }

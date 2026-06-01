@@ -159,7 +159,7 @@ const loadArticle = async () => {
   }
 
   try {
-    const res = await getArticleDetail(id)
+    const res = await getArticleDetail(id, userStore.userInfo?.id || null)
     if (res.code === 200 && res.data) {
       article.value = res.data
     } else {
