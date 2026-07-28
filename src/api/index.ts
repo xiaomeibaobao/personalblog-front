@@ -11,7 +11,8 @@ import type {
   UserInfo,
   PageResult,
   UserProfile,
-  Tag
+  Tag,
+  ChangePasswordRequest
 } from '@/types'
 
 // ========== 用户相关 ==========
@@ -183,4 +184,8 @@ export const getHotArticlesByLike = (limit: number = 10): Promise<Result<Article
  */
 export const getHourlyRank = (limit = 10): Promise<Result<Article[]>> => {
   return request.get('/api/hot/hour/rank', { params: { limit } })
+}
+
+export const changePassword = (data: ChangePasswordRequest): Promise<Result<string>> => {
+  return request.post('/api/user/changepassword', data)
 }
